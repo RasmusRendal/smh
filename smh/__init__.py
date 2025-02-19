@@ -4,6 +4,7 @@ from flask import Flask, Response, request
 from synapse.api.room_versions import RoomVersions
 from synapse.crypto.event_signing import add_hashes_and_signatures
 from synapse.api.constants import EventTypes
+import json
 
 
 app = Flask(__name__)
@@ -116,7 +117,11 @@ def get_missing_events(roomid):
 @app.route("/_matrix/federation/v1/send/<txnid>", methods=['PUT'])
 def send_transaction(txnid):
     """Currently just ignores EDUs"""
-    assert len(request.get_json()["pdus"]) == 0
+    for pdu in request.get_json()["pdus"]:
+        # I think it keeps resending the join event, because we keep forking the room state
+        assert pdu["type"] == EventTypes.Member
+    if len(request.get_json()["pdus"]) > 0:
+        return json_response({"error": "I don't care about your events"})
     return json_response({})
 
 

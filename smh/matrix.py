@@ -11,7 +11,7 @@ import os
 import re
 from synapse.events.utils import prune_event_dict
 from synapse.api.room_versions import RoomVersions
-from synapse.api.constants import EventTypes
+from synapse.api.constants import EventTypes, HistoryVisibility
 from synapse.crypto.event_signing import add_hashes_and_signatures
 
 from .unpaddedbase64 import decode_base64, encode_base64
@@ -196,12 +196,11 @@ def room_creation_events(userid: str):
     }
     add_hashes_and_signatures(RoomVersions.V1, noreply_join, SERVER_NAME, key)
 
-    room_name = {}
     history_visibility = {
         "type": EventTypes.RoomHistoryVisibility,
         "sender": f"@noreply:{SERVER_NAME}",
         "content": {
-            "history_visibility": "shared"
+            "history_visibility": HistoryVisibility.WORLD_READABLE,
         },
         "state_key": "",
         "origin_server_ts": timestamp(),
@@ -217,6 +216,7 @@ def room_creation_events(userid: str):
     }
     add_hashes_and_signatures(
         RoomVersions.V1, history_visibility, SERVER_NAME, key)
+
     power_levels = {
         "content": {
             "ban": 100,
@@ -342,7 +342,6 @@ def send_message(user, msg):
     txnId = str(round(time.time() * 1000))
     r = make_matrix_request("PUT", SERVER_NAME, key, user_server,
                             server_url, f"/_matrix/federation/v1/send/{txnId}", request_body)
-    print(r.text)
     return r
 
 
