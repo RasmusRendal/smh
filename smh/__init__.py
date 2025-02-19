@@ -4,6 +4,7 @@ from flask import Flask, Response, request
 from synapse.api.room_versions import RoomVersions
 from synapse.crypto.event_signing import add_hashes_and_signatures
 from synapse.api.constants import EventTypes
+from synapse.api.errors import Codes
 import json
 
 
@@ -31,7 +32,7 @@ def server_keys():
 
 @app.route("/_matrix/federation/v1/query/profile")
 def query_profile():
-    data = request.get_json()
+    data = request.args
     if data["user_id"] != f"@noreply:{SERVER_NAME}":
         return json_response({"errcode": "M_NOT_FOUND", "error": "User does not exist."}, status=404)
     return json_response({})
@@ -133,6 +134,14 @@ def backfill(roomid):
         "origin_server_ts": round(time.time() * 1000),
         "pdus": [],
     })
+
+
+@app.route("/_matrix/federation/<version>/invite/<roomid>/<eventid>", methods=['PUT'])
+def receive_invitation(version, roomid, eventid):
+    return json_response({
+        "errcode": Codes.FORBIDDEN,
+        "error": "This homeserver is not taking invitations",
+    }, status=403)
 
 
 @app.route("/send_message", methods=['POST'])
